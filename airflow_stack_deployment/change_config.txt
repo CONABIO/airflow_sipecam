@@ -1,0 +1,3 @@
+set /augeas/load/desktop/lens "Desktop.lns"
+set /augeas/load/desktop/incl "/usr/local/airflow/airflow.cfg"
+load

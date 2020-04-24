@@ -1,0 +1,193 @@
+version: '3.7'
+services:
+    redis:
+        image: 'redis:5.0.5'
+        networks:
+            - <network_name>
+        deploy:
+            replicas: 1
+            update_config:
+                parallelism: 2
+                delay: 10s
+            restart_policy:
+                condition: on-failure
+            placement:
+                constraints: [node.role == manager]
+        # command: redis-server --requirepass redispass
+
+    afpostgres:
+        image: ixws/postgres:v1
+        environment:
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+            # Uncomment these lines to persist data on the local filesystem.
+            - PGDATA=/var/lib/postgresql/data
+        networks:
+            - <network_name>
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+        volumes:
+            - ./pgdata/airflow:/var/lib/postgresql/data
+
+    sspostgres:
+        image: ixws/postgres:v1
+        environment:
+            - POSTGRES_USER=superset
+            - POSTGRES_PASSWORD=superset
+            - POSTGRES_DB=superset
+            - SCHEMA=camtrap
+            # Uncomment these lines to persist data on the local filesystem.
+            - PGDATA=/var/lib/postgresql/data
+        networks:
+            - <network_name>
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+        volumes:
+            - ./pgdata/superset:/var/lib/postgresql/data
+            - ./script/db_init.sh:/db_init.sh
+            - ./data/results:/data
+
+    pgadmin:
+        image: ixws/pgadmin:v1
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=admin
+            - PGADMIN_DEFAULT_PASSWORD=admin
+        networks:
+            - <network_name>
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+        volumes:
+            - ./pgadmin/:/var/lib/pgadmin 
+        ports:
+            - 1234:80
+        depends_on:
+            - sspostgres
+            - afpostgres
+
+    webserver:
+        image: orchest/airflow-tf-docker1-15:v1
+        deploy:
+            replicas: 1
+            update_config:
+                parallelism: 2
+                delay: 10s
+            restart_policy:
+                condition: on-failure
+            placement:
+                constraints: [node.role == manager]
+        depends_on:
+            - afpostgres
+            - redis
+        networks:
+            - <network_name>
+        environment:
+            - LOAD_EX=n
+            - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+            - EXECUTOR=Celery
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+            - POSTGRES_HOST=afpostgres
+            - AUTH_ENABLE=t
+        volumes:
+            - ./dags:/usr/local/airflow/dags
+            # Uncomment to include custom plugins
+            - ./plugins:/usr/local/airflow/plugins
+            - ./script/user.py:/script/user.py
+            - ./change_config.txt:/script/change_config.txt
+            - ./data:/usr/local/airflow/data
+            # Uncomment to include requirements.txt
+            #- ./requirements.txt:/script/requirements.txt
+        ports:
+            - "8099:8080"
+        command: webserver
+        healthcheck:
+            test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
+            interval: 30s
+            timeout: 30s
+            retries: 3
+
+    flower:
+        image: orchest/airflow-tf-docker1-15:v1
+        deploy:
+            replicas: 1
+            update_config:
+                parallelism: 2
+                delay: 10s
+            restart_policy:
+                condition: on-failure
+            placement:
+                constraints: [node.role == manager]
+        depends_on:
+            - redis
+        networks:
+            - <network_name>
+        volumes:
+            - ./change_config.txt:/script/change_config.txt
+        environment:
+            - EXECUTOR=Celery
+        ports:
+            - "5555:5555"
+        command: flower
+
+    scheduler:
+        image: orchest/airflow-tf-docker1-15:v1
+        networks:
+            - <network_name>
+        deploy:
+            replicas: 1
+            update_config:
+                parallelism: 2
+                delay: 10s
+            restart_policy:
+                condition: on-failure
+            placement:
+                constraints: [node.role == manager]
+        depends_on:
+            - webserver
+        volumes:
+            - ./dags:/usr/local/airflow/dags
+            # Uncomment to include custom plugins
+            - ./plugins:/usr/local/airflow/plugins
+            - ./change_config.txt:/script/change_config.txt
+            - ./data:/usr/local/airflow/data
+        environment:
+            - LOAD_EX=n
+            - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
+            - EXECUTOR=Celery
+            - POSTGRES_USER=airflow
+            - POSTGRES_PASSWORD=airflow
+            - POSTGRES_DB=airflow
+            - POSTGRES_HOST=afpostgres
+        command: scheduler
+
+    superset:
+        image: 'ixws/superset:v1'
+        networks:
+            - <network_name>
+        deploy:
+            replicas: 1
+            update_config:
+                parallelism: 2
+                delay: 10s
+            restart_policy:
+                condition: on-failure
+            placement:
+                constraints: [node.role == manager]
+        depends_on:
+            - redis
+            - sspostgres
+        volumes:
+            - ./script/superset_config.py:/etc/superset/superset_config.py
+            - ./script/superset_init.sh:/etc/superset/superset_init.sh
+        ports:
+            - "8088:8088"
+
+networks:
+    <network_name>:
+        driver: overlay
+        attachable: true
