@@ -39,7 +39,7 @@ sudo docker exec -it <web_server_container> python3 /script/user.py
 
 ### 4. Add worker(s) on nodes with GPU
 
-To add a worker, run the following lines in other nodes with GPU(s) installed, just change the name of the container and network formed by <name_of_stack>_<network on docker_stack.yml>
+To add a worker, run the following lines in other nodes with GPU(s) installed, just change the name of the container and network formed by <(name_of_stack)_(network on docker_stack.yml)>
 
 ```
 dir=<this_directory>
