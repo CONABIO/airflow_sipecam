@@ -64,3 +64,16 @@ sudo docker container run \
 -dit orchest/airflow-tf-docker1-15:v1 worker
 ```
 
+### Note
+
+If you deplot the stack with extras (included superset) use docker_stack_extras.yml and once you deploy the stack run the following to initialize the db. Do not forget to modify script/db_init.sh for your purpose.  
+
+```
+sudo docker exec -it <sspostgres_container> /bin/bash /db_init.sh
+```
+
+Initialize superset.  
+
+```
+sudo docker exec -it <superset_container> /bin/bash /etc/superset/superset_init.sh
+```
