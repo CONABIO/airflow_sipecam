@@ -69,7 +69,7 @@ sudo docker container run \
 
 ### Note
 
-If you deplot the stack with extras (included superset) use docker_stack_extras.yml and once you deploy the stack run the following to initialize the db. Do not forget to modify script/db_init.sh for your purpose.  
+If you deploy the stack with extras (included superset) use docker_stack_extras.yml and once you deploy the stack run the following to initialize the db. Do not forget to modify script/db_init.sh for your purpose.  
 
 ```
 sudo docker exec -it <sspostgres_container> /bin/bash /db_init.sh
