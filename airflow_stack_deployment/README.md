@@ -1,5 +1,8 @@
 # Airflow stack for pipelines orchestration on a docker swarm 
 
+This implementation was based on puckel's work https://github.com/puckel/docker-airflow
+
+
 ## Overview
 
 ![](images/airflow-docker-stack.png)
