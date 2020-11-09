@@ -64,7 +64,7 @@ sudo docker container run \
 -p 6006:6006 \
 --network <name_of_network> \
 --name <name_of_container> \
--dit orchest/airflow-tf-docker1-15:v1 worker
+-dit floworchest/airflow-tf-docker1-15:v1 worker
 ```
 
 ### Note
