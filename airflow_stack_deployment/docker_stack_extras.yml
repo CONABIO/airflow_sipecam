@@ -69,7 +69,7 @@ services:
             - afpostgres
 
     webserver:
-        image: orchest/airflow-tf-docker1-15:v1
+        image: floworchest/airflow-tf-docker1-15:v1
         deploy:
             replicas: 1
             update_config:
@@ -112,7 +112,7 @@ services:
             retries: 3
 
     flower:
-        image: orchest/airflow-tf-docker1-15:v1
+        image: floworchest/airflow-tf-docker1-15:v1
         deploy:
             replicas: 1
             update_config:
@@ -135,7 +135,7 @@ services:
         command: flower
 
     scheduler:
-        image: orchest/airflow-tf-docker1-15:v1
+        image: floworchest/airflow-tf-docker1-15:v1
         networks:
             - <network_name>
         deploy:
